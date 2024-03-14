@@ -9,8 +9,8 @@ use tokio::sync::mpsc::{error::TrySendError, Receiver};
 
 pub struct BodyIoError;
 
-pub fn channel() -> (BodyReader, BodyWriter) {
-    let (tx, rx) = tokio::sync::mpsc::channel(1);
+pub fn channel(bufsize: usize) -> (BodyReader, BodyWriter) {
+    let (tx, rx) = tokio::sync::mpsc::channel(bufsize);
     (BodyReader { receiver: rx }, BodyWriter { sender: tx })
 }
 
@@ -131,7 +131,7 @@ mod tests {
     #[test]
     fn test_body() {
         use std::io::Write;
-        let (_reader, mut writer) = channel();
+        let (_reader, mut writer) = channel(10);
         writer.write_all(b"Hello, ").unwrap();
     }
 
@@ -141,7 +141,7 @@ mod tests {
 
         use tokio::io::AsyncWriteExt;
 
-        let (reader, mut writer) = channel();
+        let (reader, mut writer) = channel(10);
         writer.write_all(b"Hello, ").await.unwrap();
         drop(writer);
 
@@ -161,7 +161,7 @@ mod tests {
     async fn test_async_body_sync_write() {
         use futures::StreamExt;
 
-        let (reader, mut writer) = channel();
+        let (reader, mut writer) = channel(10);
 
         let writer_thread = std::thread::spawn(move || {
             use std::io::Write;
