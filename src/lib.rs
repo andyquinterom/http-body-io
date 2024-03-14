@@ -46,7 +46,10 @@ impl http_body::Body for BodyReader {
                 Poll::Ready(Some(Ok(frame)))
             }
             Poll::Ready(None) => Poll::Ready(None),
-            Poll::Pending => Poll::Pending,
+            Poll::Pending => {
+                cx.waker().wake_by_ref();
+                Poll::Pending
+            }
         }
     }
 }
@@ -59,7 +62,10 @@ impl tokio::io::AsyncRead for BodyReader {
     ) -> Poll<std::io::Result<()>> {
         let mut this = Box::pin(self.receiver.recv());
         match this.as_mut().poll(cx) {
-            Poll::Pending => Poll::Pending,
+            Poll::Pending => {
+                cx.waker().wake_by_ref();
+                Poll::Pending
+            }
             Poll::Ready(Some(bytes)) => {
                 buf.put_slice(&bytes);
                 Poll::Ready(Ok(()))
@@ -105,7 +111,10 @@ impl tokio::io::AsyncWrite for BodyWriter {
     ) -> Poll<Result<usize, std::io::Error>> {
         let mut this = Box::pin(self.sender.send(Bytes::copy_from_slice(buf)));
         match this.as_mut().poll(cx) {
-            Poll::Pending => Poll::Pending,
+            Poll::Pending => {
+                cx.waker().wake_by_ref();
+                Poll::Pending
+            }
             Poll::Ready(Ok(())) => Poll::Ready(Ok(buf.len())),
             Poll::Ready(Err(_)) => Poll::Ready(Err(std::io::Error::new(
                 std::io::ErrorKind::BrokenPipe,
