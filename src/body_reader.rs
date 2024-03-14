@@ -1,5 +1,8 @@
 use super::BodyIoError;
 
+#[allow(unused_imports)]
+use crate::BodyWriter;
+
 use core::{
     future::Future,
     pin::{pin, Pin},
@@ -9,6 +12,10 @@ use core::{
 use bytes::Bytes;
 use tokio::sync::mpsc::Receiver;
 
+/// A reader for the body of an HTTP request or response.
+///
+/// This reader implements the [`http_body::Body`] trait and is used for
+/// web servers to access the data being sent by the [`BodyWriter`].
 pub struct BodyReader {
     pub(crate) receiver: Receiver<Bytes>,
 }

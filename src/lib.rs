@@ -6,9 +6,19 @@ pub use body_reader::BodyReader;
 
 pub struct BodyIoError;
 
-pub fn channel(bufsize: usize) -> (BodyReader, BodyWriter) {
+/// Creates a new channel for sending and receiving body data.
+///
+/// The `bufsize` parameter is the maximum number of writes that can
+/// be buffered before the receiver must read some data. This means
+/// that the using a `BufWriter` may still be necessary to avoid
+/// excessive system calls.
+///
+/// # Panics
+///
+/// Panics if `bufsize` is 0.
+pub fn channel(bufsize: usize) -> (BodyWriter, BodyReader) {
     let (tx, rx) = tokio::sync::mpsc::channel(bufsize);
-    (BodyReader { receiver: rx }, BodyWriter { sender: tx })
+    (BodyWriter { sender: tx }, BodyReader { receiver: rx })
 }
 
 impl std::fmt::Display for BodyIoError {
@@ -32,7 +42,7 @@ mod tests {
     #[test]
     fn test_body() {
         use std::io::Write;
-        let (_reader, mut writer) = channel(10);
+        let (mut writer, _reader) = channel(10);
         writer.write_all(b"Hello, ").unwrap();
     }
 
@@ -42,7 +52,7 @@ mod tests {
 
         use tokio::io::AsyncWriteExt;
 
-        let (reader, mut writer) = channel(10);
+        let (mut writer, reader) = channel(10);
         writer.write_all(b"Hello, ").await.unwrap();
         drop(writer);
 
@@ -62,7 +72,7 @@ mod tests {
     async fn test_async_body_sync_write() {
         use futures::StreamExt;
 
-        let (reader, mut writer) = channel(10);
+        let (mut writer, reader) = channel(10);
 
         let writer_thread = std::thread::spawn(move || {
             use std::io::Write;

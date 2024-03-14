@@ -7,6 +7,12 @@ use core::{
 use bytes::Bytes;
 use tokio::sync::mpsc::error::TrySendError;
 
+/// A writer for the body of an HTTP request or response.
+///
+/// This writer can be used to write the body of an HTTP request or response
+/// using the [`std::io::Write`] or [`tokio::io::AsyncWrite`] traits.
+///
+/// In order for the reader to stop reading, the writer must be dropped.
 pub struct BodyWriter {
     pub(crate) sender: tokio::sync::mpsc::Sender<Bytes>,
 }
