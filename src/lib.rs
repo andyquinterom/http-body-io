@@ -1,4 +1,6 @@
 mod body_writer;
+use std::num::NonZeroUsize;
+
 pub use body_writer::BodyWriter;
 
 mod body_reader;
@@ -12,12 +14,8 @@ pub struct BodyIoError;
 /// be buffered before the receiver must read some data. This means
 /// that the using a `BufWriter` may still be necessary to avoid
 /// excessive system calls.
-///
-/// # Panics
-///
-/// Panics if `bufsize` is 0.
-pub fn channel(bufsize: usize) -> (BodyWriter, BodyReader) {
-    let (tx, rx) = tokio::sync::mpsc::channel(bufsize);
+pub fn channel(bufsize: NonZeroUsize) -> (BodyWriter, BodyReader) {
+    let (tx, rx) = tokio::sync::mpsc::channel(bufsize.into());
     (BodyWriter { sender: tx }, BodyReader { receiver: rx })
 }
 
@@ -39,10 +37,12 @@ impl std::error::Error for BodyIoError {}
 mod tests {
     use super::*;
 
+    const BUF_SIZE: NonZeroUsize = unsafe { NonZeroUsize::new_unchecked(1024) };
+
     #[test]
     fn test_body() {
         use std::io::Write;
-        let (mut writer, _reader) = channel(10);
+        let (mut writer, _reader) = channel(BUF_SIZE);
         writer.write_all(b"Hello, ").unwrap();
     }
 
@@ -52,7 +52,7 @@ mod tests {
 
         use tokio::io::AsyncWriteExt;
 
-        let (mut writer, reader) = channel(10);
+        let (mut writer, reader) = channel(BUF_SIZE);
         writer.write_all(b"Hello, ").await.unwrap();
         drop(writer);
 
@@ -72,7 +72,7 @@ mod tests {
     async fn test_async_body_sync_write() {
         use futures::StreamExt;
 
-        let (mut writer, reader) = channel(10);
+        let (mut writer, reader) = channel(BUF_SIZE);
 
         let writer_thread = std::thread::spawn(move || {
             use std::io::Write;

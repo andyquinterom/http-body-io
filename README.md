@@ -13,7 +13,7 @@ This is an example with axum.
 ```toml
 [dependencies]
 axum = "0.7.4"
-http-body-io = "0.1.1"
+http-body-io = "0.2"
 tokio = { version = "1", features = ["full"] }
 ```
 
@@ -37,7 +37,7 @@ async fn main() {
 async fn root() -> (StatusCode, Body) {
     // We create a channel for the body with a buffer of 1
     // item.
-    let (body_reader, body_writer) = http_body_io::channel(1);
+    let (body_writer, body_reader) = http_body_io::channel(1);
 
     // Spawn a task to write the body
     tokio::spawn(async move {
