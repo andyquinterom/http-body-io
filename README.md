@@ -35,9 +35,11 @@ async fn main() {
 
 // basic handler that responds with a body reader
 async fn root() -> (StatusCode, Body) {
+    let buffer_size = 10.try_into().expect("10 is a valid buffer size");
+
     // We create a channel for the body with a buffer of 1
     // item.
-    let (body_writer, body_reader) = http_body_io::channel(1);
+    let (body_writer, body_reader) = http_body_io::channel(buffer_size);
 
     // Spawn a task to write the body
     tokio::spawn(async move {
