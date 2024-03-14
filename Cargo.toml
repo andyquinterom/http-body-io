@@ -1,6 +1,6 @@
 [package]
 name = "http-body-io"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2021"
 authors = ["Andrés F. Quintero <afquinteromoreano@gmail.com>"]
 description = "A very simple IO wrapper for http-body"
